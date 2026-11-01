@@ -13,16 +13,12 @@ const BIG = [
   { label: 'Police', phone: '100', icon: ShieldAlert, c: 'from-brand-600 to-brand-800' },
   { label: 'Emergency', phone: '112', icon: Siren, c: 'from-rose-600 to-red-700' }
 ]
-const SOC = [
-  { label: 'Security desk', sub: 'Main gate · 24×7', phone: '+91 97300 55500', icon: Shield },
-  { label: 'Society emergency', sub: 'Chairman – Rajesh Kulkarni', phone: '+91 98230 40401', icon: Building2 },
-  { label: 'Maintenance emergency', sub: 'Facility Manager – Suresh Patil', phone: '+91 97300 11122', icon: Wrench }
-]
 
 export default function Emergency() {
   const { user } = useAuth()
   const act = useAction()
   const ask = useConfirm()
+  const SOC = useData((d) => d.list('contacts', (c) => c.group === 'Society' || c.group === 'Maintenance').slice(0, 4).map((c) => ({ label: c.name, sub: c.note, phone: c.phone, icon: c.group === 'Maintenance' ? Wrench : c.icon === 'shield' ? Shield : Building2 })))
   const alerts = useData((d) => d.list('alerts').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
   const [open, setOpen] = useState(false)
   const [f, setF] = useState({ title: '', message: '', severity: 'high' })

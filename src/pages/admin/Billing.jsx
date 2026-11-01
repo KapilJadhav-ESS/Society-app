@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Download, Plus, Trash2, Zap, Clock, IndianRupee, Search, Receipt, MinusCircle } from 'lucide-react'
-import { Page, Card, Tabs, Chips, Button, Field, Input, Select, Sheet, Empty, useAction, useConfirm } from '../../components/ui'
+import { Page, Card, Tabs, Chips, Button, Field, Input, Select, Textarea, Sheet, Empty, useAction, useConfirm } from '../../components/ui'
 import { BillBadge } from '../Payments'
 import { useAuth } from '../../lib/auth'
 import { useData, db } from '../../lib/db'
 import { can } from '../../lib/rbac'
-import { billTotal, billStatus, billingConfig, saveBillingConfig, generateBills, applyLateFees, addAdjustment, waiveLateFee, payBills, aptNo, residentsOfApt } from '../../lib/actions'
+import { verifyPayment, billLabel, billTotal, billStatus, billingConfig, saveBillingConfig, generateBills, applyLateFees, addAdjustment, waiveLateFee, payBills, aptNo, residentsOfApt } from '../../lib/actions'
 import { inr, ymOf, addMonths, monthLabel, fmtDate, downloadCSV, uid, cls } from '../../lib/utils'
 
 export default function Billing() {
@@ -45,6 +45,7 @@ function Collection({ manage }) {
   const b = sel && db.get('bills', sel)
   return (
     <>
+      <VerifyPayments manage={manage} />
       <div className="flex gap-2 mt-3">
         <Select value={ym} onChange={(e) => setYm(e.target.value)} className="flex-1">{months.map((m) => <option key={m} value={m}>{monthLabel(m)}</option>)}</Select>
         <Button variant="outline" icon={Download} onClick={exportCsv}>CSV</Button>
@@ -73,7 +74,7 @@ function Collection({ manage }) {
       </Card>
       {!bills.length && <Empty icon={Receipt} title="No bills for this month" text={manage ? 'Generate bills to start collection.' : ''} />}
 
-      <Sheet open={!!b} onClose={() => setSel(null)} title={b ? `${aptNo(b.apartmentId)} · ${monthLabel(b.month)}` : ''}>
+      <Sheet open={!!b} onClose={() => setSel(null)} title={b ? `${aptNo(b.apartmentId)} · ${billLabel(b)}` : ''}>
         {b && <BillAdmin b={b} manage={manage} close={() => setSel(null)} />}
       </Sheet>
     </>
@@ -142,6 +143,13 @@ function Settings() {
         <Button size="sm" variant="ghost" icon={Plus} onClick={() => setC({ ...c, items: [...c.items, { id: uid('i'), label: 'New charge', amount: 0 }] })}>Add charge</Button>
         <div className="text-xs text-ink-500 mt-3 bg-ink-100 rounded-xl p-3 flex items-center gap-2"><IndianRupee size={14} /> A 1,050 sq.ft flat would pay <b className="text-ink-900">{inr(sample)}</b>/month</div>
       </Card>
+      <Card className="p-4 mt-4">
+        <div className="text-sm font-bold mb-1">How residents pay the society</div>
+        <p className="text-xs text-ink-500 mb-3">Shown on the resident’s Pay screen. Residents pay directly, enter the reference, and you verify it here.</p>
+        <Field label="Society UPI ID" hint="e.g. shantinagarchs@hdfcbank – opens GPay/PhonePe with the amount filled in"><Input value={c.upiId || ''} onChange={(e) => setC({ ...c, upiId: e.target.value.trim() })} placeholder="society@bank" autoCapitalize="none" /></Field>
+        <Field label="Payee name (as per bank)"><Input value={c.payeeName || ''} onChange={(e) => setC({ ...c, payeeName: e.target.value })} /></Field>
+        <Field label="Bank details for NEFT (optional)"><Textarea rows={3} value={c.bankDetails || ''} onChange={(e) => setC({ ...c, bankDetails: e.target.value })} placeholder={'A/c name: …\nA/c no: …\nIFSC: …'} /></Field>
+      </Card>
       <Button block size="lg" className="mt-4" onClick={() => act(() => saveBillingConfig(user, c), 'Billing settings saved – applies to new bills')}>Save settings</Button>
     </div>
   )
@@ -182,6 +190,44 @@ function AptCharges() {
         </div>
         <Button block icon={Plus} onClick={add}>Add charge</Button>
       </Card>
+    </div>
+  )
+}
+
+function VerifyPayments({ manage }) {
+  const { user } = useAuth()
+  const act = useAction()
+  const [rej, setRej] = useState(null)
+  const [reason, setReason] = useState('')
+  const pending = useData((d) => d.list('payments', (p) => p.status === 'pending').sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)))
+  if (!pending.length) return null
+  return (
+    <div className="mt-3">
+      <div className="text-sm font-bold mb-2">{`Payments to verify (${pending.length})`}</div>
+      <div className="space-y-2">
+        {pending.map((p) => (
+          <Card key={p.id} className="p-4 border-2 border-sky-100">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-12 rounded-xl bg-brand-50 text-brand-800 text-[12px] font-extrabold grid place-items-center">{aptNo(p.apartmentId)}</div>
+              <div className="flex-1 min-w-0">
+                <div className="font-bold">{inr(p.amount)} <span className="text-xs font-semibold text-ink-500">· {p.method}</span></div>
+                <div className="text-xs text-ink-500 truncate">Ref <b className="text-ink-900 select-all">{p.ref}</b> · {fmtDate(p.createdAt)} · {db.get('users', p.userId)?.name || ''}</div>
+              </div>
+            </div>
+            <p className="text-[11px] text-ink-500 mt-2">Check this reference in the society’s bank statement / UPI app before approving.</p>
+            {manage && (
+              <div className="flex gap-2 mt-2">
+                <Button size="sm" variant="danger" block onClick={() => { setReason(''); setRej(p.id) }}>Not received</Button>
+                <Button size="sm" variant="success" block onClick={() => act(() => verifyPayment(user, p.id, true), 'Payment verified – receipt sent')}>Money received</Button>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+      <Sheet open={!!rej} onClose={() => setRej(null)} title="Payment not received">
+        <Field label="Message to the resident"><Input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Reference not found in bank statement" /></Field>
+        <Button variant="dangerSolid" block onClick={() => { act(() => verifyPayment(user, rej, false, reason), 'Resident informed'); setRej(null) }}>Mark as not received</Button>
+      </Sheet>
     </div>
   )
 }

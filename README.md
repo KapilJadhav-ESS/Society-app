@@ -41,10 +41,13 @@ Use **Profile → Log out / switch demo account** to switch roles, and
 Test-card tip: on the simulated payment gateway, any card works; a card ending in
 `0002` simulates a bank decline.
 
-> **Important — demo mode:** all data is stored on the device (IndexedDB). Two
-> different phones do **not** see each other's posts or payments yet. Open tabs on
-> the same phone do sync live (try a Guard tab and a Resident tab side by side).
-> To share data across all residents, connect the Supabase backend (section 4).
+> **Demo mode vs. society mode.** Without any settings the app runs as an
+> offline demo: sample data, kept on each phone. To use it for a real society,
+> follow **[docs/GO-LIVE.md](docs/GO-LIVE.md)** – create a free Supabase
+> project, run one SQL file, add two GitHub variables, then set up your society
+> inside the app (setup wizard + spreadsheet import). In society mode everyone
+> shares the same data, logs in with their own mobile number (SMS or email
+> code), and the database enforces who can see and change what.
 
 ## 3. Features
 
@@ -75,7 +78,10 @@ Manager · Security Guard · Resident — permissions are defined in one place,
 
 ```
 src/
-  lib/db.js        local-first store (IndexedDB) – list/get/insert/update/remove, cross-tab sync
+  lib/db.js        data store – demo: on-device; society mode: Supabase with device cache,
+                   offline outbox, realtime + periodic sync
+  lib/cloud.js     Supabase client: OTP login, server functions, photo uploads
+  lib/config.js    build-time settings (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY …)
   lib/actions.js   domain API: validation + permission checks for every workflow
   lib/rbac.js      roles → permissions
   lib/seed.js      realistic sample society (72 flats, residents, bills, tickets…)
@@ -83,22 +89,29 @@ src/
   i18n/            Marathi & Hindi dictionaries (strings1-4.js) + translator (index.js)
   components/      design system (cards, sheets, chips, tabs, charts…)
   pages/           feature modules; pages/admin/ for the dashboard
-supabase/schema.sql  Postgres schema + RLS for the cloud backend
+  pages/Onboarding.jsx  join a society / society setup wizard
+  pages/admin/Import.jsx  CSV import of residents (roles, opening balances) and flats
+supabase/setup.sql   the whole backend: tables, permission checks, sync feed, storage
+supabase/test/       security tests (70 checks) + a local Supabase stand-in for testing
+docs/GO-LIVE.md      step-by-step: from zero to a live society
 ```
 
 - React 18 + Vite + Tailwind CSS, `vite-plugin-pwa` (service worker, offline, install).
 - **Multi-society ready:** every record carries `societyId`; the store scopes queries to the current society.
-- **Going live with real shared data:** create a Supabase project, run `supabase/schema.sql`, enable phone OTP auth, and replace the bodies of `db.list/insert/update/remove` with Supabase table calls (the action layer and UI stay the same). Use Supabase Storage for photos and Realtime for notifications.
-- **Real payments:** use an Indian gateway such as Razorpay or Cashfree. Create orders and verify payment signatures in a server-side function (e.g. a Supabase Edge Function) and only mark bills paid from that verified webhook — never from the browser.
+- **Society mode (Supabase):** every record is a JSON document in one table; all reads and writes go through SQL functions that check membership and role per record (`can_write`, `visible_record` in `supabase/setup.sql`). Phones keep a cached copy, apply changes instantly, queue them while offline, and pull others' changes via Realtime plus a 30-second catch-up.
+- **Payments in society mode:** residents pay the society's UPI ID / bank account directly and report the reference; the treasurer verifies before the bill is marked paid. A gateway (Razorpay/Cashfree) can be added later: verify the payment signature in a server function and mark bills paid only from there.
 - **Native Android later:** this PWA can be wrapped as a Play Store app with a Trusted Web Activity (e.g. Bubblewrap / PWABuilder) without rewriting it.
 
 ## 5. Develop locally (optional, needs a computer)
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
+npm run dev      # http://localhost:5173 (demo mode, or society mode with .env.local – see .env.example)
 npm run build    # production build in dist/
+npm run test:db  # security tests – needs PostgreSQL with supabase/test/supabase-stub.sql + supabase/setup.sql loaded
 ```
+
+Every push runs the database security tests on GitHub before the app is published.
 
 ### Adding or correcting a translation
 Open `src/i18n/strings1.js` … `strings4.js` and edit the line

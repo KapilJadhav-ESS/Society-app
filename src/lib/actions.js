@@ -156,10 +156,11 @@ export const SLA_HOURS = { urgent: 12, high: 48, medium: 96, low: 168 }
 
 export const isOverdue = (c) => !['resolved', 'closed'].includes(c.status) && (Date.now() - new Date(c.createdAt).getTime()) / 3600000 > SLA_HOURS[c.priority || 'medium']
 
+const prefix = () => db.society()?.prefix || 'PG'
 function nextTicket() {
   const n = db.setting('ticketSeq', 1000) + 1
   db.setSetting('ticketSeq', n)
-  return `PG-${n}`
+  return `${prefix()}-${n}`
 }
 export function createComplaint(user, data) {
   req(data.title, 'Title'); req(data.description, 'Description'); req(data.category, 'Category')
@@ -210,13 +211,16 @@ export function rateComplaint(user, id, rating, feedback) {
 }
 
 // ---------- Maintenance billing ----------
+export const billLabel = (b) => b.title || monthLabel(b.month)
 export const billTotal = (b) => b.amount + (b.lateFee || 0) + (b.adjustments || []).reduce((a, x) => a + x.amount, 0)
-export const billStatus = (b) => (b.status === 'paid' ? 'paid' : new Date(b.dueDate) < new Date() ? 'overdue' : 'due')
+export const pendingPaymentFor = (billId) => db.find('payments', (p) => p.status === 'pending' && p.billIds?.includes(billId))
+export const billStatus = (b) => (b.status === 'paid' ? 'paid' : pendingPaymentFor(b.id) ? 'verifying' : new Date(b.dueDate) < new Date() ? 'overdue' : 'due')
 export const billingConfig = () => db.setting('billing', { ratePerSqft: 3, dueDay: 10, lateFee: 200, lateFeeType: 'flat', items: [] })
 
 export function saveBillingConfig(user, cfg) {
   guard(user, 'billing.manage')
-  must(cfg.ratePerSqft > 0, 'Rate per sq.ft must be positive.')
+  must(cfg.ratePerSqft >= 0, 'Rate per sq.ft must be positive.')
+  must(cfg.ratePerSqft > 0 || cfg.items.some((i) => Number(i.amount) > 0), 'Set a rate per sq.ft or at least one fixed charge.')
   must(cfg.dueDay >= 1 && cfg.dueDay <= 28, 'Due day must be between 1 and 28.')
   db.setSetting('billing', cfg)
 }
@@ -234,7 +238,7 @@ export function generateBills(user, ym = ymOf()) {
       { label: `Maintenance (${apt.area} sq.ft × ₹${cfg.ratePerSqft})`, amount: Math.round(apt.area * cfg.ratePerSqft) },
       ...cfg.items.map((i) => ({ label: i.label, amount: Number(i.amount) })),
       ...db.list('aptCharges', (c) => c.apartmentId === apt.id).map((c) => ({ label: c.label, amount: Number(c.amount) }))
-    ]
+    ].filter((i) => i.amount > 0)
     db.insert('bills', { id, apartmentId: apt.id, month: ym, items, adjustments: [], lateFee: 0, amount: items.reduce((a, b) => a + b.amount, 0), dueDate: new Date(y, m - 1, cfg.dueDay, 23, 59).toISOString(), status: 'unpaid' })
     created++
     residentsOfApt(apt.id).forEach((u) => notify(u.id, { type: 'payments', title: `Maintenance bill for ${monthLabel(ym)}`, body: `Your bill is ready. Due by ${fmtShort(new Date(y, m - 1, cfg.dueDay).toISOString())}.`, link: '/payments', key: `bill-${id}` }))
@@ -272,12 +276,45 @@ export function payBills(user, billIds, method, { offline = false, actor } = {})
   const apt = aptById(bills[0].apartmentId)
   const pay = db.insert('payments', {
     id: uid('pay_'), billIds, apartmentId: bills[0].apartmentId, userId: user?.id || null, amount, method,
-    ref: (offline ? 'CASH' : 'TXN') + Date.now().toString().slice(-10), receiptNo: `PGR/${ymOf(now).replace('-', '')}/${apt.number}/${Math.floor(Math.random() * 900 + 100)}`,
+    ref: (offline ? 'CASH' : 'TXN') + Date.now().toString().slice(-10), receiptNo: `${prefix()}R/${ymOf(now).replace('-', '')}/${apt.number}/${Math.floor(Math.random() * 900 + 100)}`,
     status: 'success', recordedBy: offline ? actor.id : null
   })
   bills.forEach((b) => db.update('bills', b.id, { status: 'paid', paidAt: now.toISOString(), paymentId: pay.id }))
   residentsOfApt(apt.id).forEach((u) => notify(u.id, { type: 'payments', title: 'Payment successful ✅', body: `${inr(amount)} received for ${apt.number}. Receipt ${pay.receiptNo}`, link: `/payments/receipt/${pay.id}` }))
   return pay
+}
+
+// Resident paid by UPI / bank transfer to the society account and reports it.
+// The bill stays unpaid until the treasurer verifies the money arrived.
+export function reportPayment(user, billIds, { method, ref }) {
+  must(billIds.length, 'Select at least one bill.')
+  must(user.access !== 'limited', 'Your family account has limited access. Ask the primary member to pay.')
+  const r = String(ref || '').trim()
+  must(/^[A-Za-z0-9/-]{6,30}$/.test(r), 'Enter the UPI reference (12-digit UTR) or bank reference number.')
+  const bills = billIds.map((id) => db.get('bills', id))
+  must(bills.every((b) => b && b.status !== 'paid' && b.apartmentId === user.apartmentId), 'One or more bills are already paid.')
+  must(!bills.some((b) => pendingPaymentFor(b.id)), 'A payment for this bill is already waiting for verification.')
+  const amount = bills.reduce((a, b) => a + billTotal(b), 0)
+  const pay = db.insert('payments', { id: uid('pay_'), billIds, apartmentId: user.apartmentId, userId: user.id, amount, method, ref: r, status: 'pending' })
+  notify({ roles: ['treasurer', 'chairman', 'super_admin'] }, { type: 'payments', title: 'Payment to verify', body: `${aptNo(user.apartmentId)} paid ${inr(amount)} by ${method} · Ref ${r}`, link: '/admin/billing' })
+  return pay
+}
+
+export function verifyPayment(actor, payId, approve, reason = '') {
+  guard(actor, 'billing.manage')
+  const p = db.get('payments', payId)
+  must(p && p.status === 'pending', 'This payment has already been handled.')
+  const apt = aptById(p.apartmentId)
+  const now = new Date().toISOString()
+  if (approve) {
+    const receiptNo = `${prefix()}R/${ymOf().replace('-', '')}/${apt.number}/${Math.floor(Math.random() * 900 + 100)}`
+    p.billIds.forEach((id) => db.update('bills', id, { status: 'paid', paidAt: now, paymentId: p.id }))
+    db.update('payments', p.id, { status: 'success', receiptNo, verifiedBy: actor.id, verifiedAt: now })
+    residentsOfApt(apt.id).forEach((u) => notify(u.id, { type: 'payments', title: 'Payment received ✅', body: `${inr(p.amount)} received for ${apt.number}. Receipt ${receiptNo}`, link: `/payments/receipt/${p.id}` }))
+  } else {
+    db.update('payments', p.id, { status: 'rejected', reason, verifiedBy: actor.id, verifiedAt: now })
+    residentsOfApt(apt.id).forEach((u) => notify(u.id, { type: 'payments', title: 'Payment could not be verified', body: reason || `We could not find ${inr(p.amount)} with reference ${p.ref}. Please contact the treasurer.`, link: '/payments' }))
+  }
 }
 
 // ---------- Visitors ----------

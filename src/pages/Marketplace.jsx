@@ -23,14 +23,14 @@ export default function Marketplace() {
 }
 
 function List() {
-  const { user } = useAuth()
+  const { user, society } = useAuth()
   const nav = useNavigate()
   const [t, setT] = useState('all')
   const [q, setQ] = useState('')
   const all = useData((d) => d.list('listings').sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)))
   const list = all.filter((l) => (t === 'mine' ? l.userId === user.id : live(l) && (t === 'all' || l.type === t)) && (!q || (l.title + l.description).toLowerCase().includes(q.toLowerCase())))
   return (
-    <Page title="Marketplace" subtitle="Exclusively for Palm Grove residents" back actions={<Button size="sm" icon={Plus} onClick={() => nav('new')}>Sell</Button>}>
+    <Page title="Marketplace" subtitle={`Exclusively for ${society.short || society.name} residents`} back actions={<Button size="sm" icon={Plus} onClick={() => nav('new')}>Sell</Button>}>
       <div className="relative mt-2"><Search size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-400" /><input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search furniture, flats, tuitions…" className="w-full h-12 rounded-2xl bg-white shadow-card pl-10 pr-4 text-[15px] outline-none focus:ring-2 focus:ring-brand-200" /></div>
       <Chips className="mt-3" value={t} onChange={setT} options={[{ value: 'all', label: 'All' }, ...Object.entries(LISTING_TYPES).map(([k, l]) => ({ value: k, label: l })), { value: 'mine', label: 'My listings' }]} />
       <div className="grid grid-cols-2 gap-3 mt-4">
@@ -56,7 +56,7 @@ function List() {
 
 function Detail() {
   const { id } = useParams()
-  const { user } = useAuth()
+  const { user, society } = useAuth()
   const nav = useNavigate()
   const act = useAction()
   const ask = useConfirm()
@@ -65,7 +65,7 @@ function Detail() {
   const seller = userById(l.userId)
   const mine = l.userId === user.id
   const phone = seller?.phone?.replace(/\D/g, '')
-  const msg = encodeURIComponent(`Hi ${seller?.name.split(' ')[0]}, I saw your listing "${l.title}" on the Palm Grove marketplace. Is it still available?`)
+  const msg = encodeURIComponent(`Hi ${seller?.name.split(' ')[0]}, I saw your listing "${l.title}" on the ${society.name || ''} marketplace. Is it still available?`)
   return (
     <Page title={LISTING_TYPES[l.type]} back="/marketplace">
       {l.media?.length > 0 && <MediaGrid media={l.media.map((url) => ({ type: 'image', url }))} className="mt-2" />}

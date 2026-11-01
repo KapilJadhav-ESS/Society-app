@@ -7,6 +7,8 @@ import { useData, db, resetDB } from '../lib/db'
 import { roleLabel, can } from '../lib/rbac'
 import { updateUser, aptById, devicePush } from '../lib/actions'
 import { fileToDataUrl, uid, cls } from '../lib/utils'
+import { DEMO } from '../lib/config'
+import { storeMedia } from '../lib/media'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 import { canInstall, isStandalone, onInstallChange, promptInstall } from '../lib/install'
 
@@ -27,7 +29,8 @@ export default function Profile() {
   const changePhoto = async (e) => {
     const f = e.target.files[0]
     e.target.value = ''
-    if (f) save({ avatar: await fileToDataUrl(f, 400, 0.85) }, 'Profile photo updated')
+    if (!f) return
+    try { save({ avatar: await storeMedia(await fileToDataUrl(f, 400, 0.85), 'avatar.jpg') }, 'Profile photo updated') } catch (err) { toast(err.message, 'error') }
   }
   const row = (icon, label, sub, key, color = 'bg-brand-50 text-brand-700') => (
     <button onClick={() => (key === 'admin' ? nav('/admin') : setSheet(key))} className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:bg-ink-100">
@@ -90,8 +93,8 @@ export default function Profile() {
       </Card>
 
       <Card className="mt-3 divide-y divide-ink-100 overflow-hidden">
-        <button onClick={async () => { if (await ask({ title: 'Log out?', ok: 'Log out' })) { logout(); nav('/') } }} className="w-full flex items-center gap-3 px-4 py-3.5 text-left font-semibold text-red-600"><LogOut size={18} /> Log out / switch demo account</button>
-        <button onClick={async () => { if (await ask({ title: 'Reset demo data?', text: 'All changes on this device will be erased and the sample data restored.', ok: 'Reset', danger: true })) { await resetDB(); toast('Demo data restored') } }} className="w-full flex items-center gap-3 px-4 py-3.5 text-left font-semibold text-ink-500"><RotateCcw size={18} /> Reset demo data</button>
+        <button onClick={async () => { if (await ask({ title: 'Log out?', ok: 'Log out' })) { logout(); nav('/') } }} className="w-full flex items-center gap-3 px-4 py-3.5 text-left font-semibold text-red-600"><LogOut size={18} /> {DEMO ? 'Log out / switch demo account' : 'Log out'}</button>
+        {DEMO && <button onClick={async () => { if (await ask({ title: 'Reset demo data?', text: 'All changes on this device will be erased and the sample data restored.', ok: 'Reset', danger: true })) { await resetDB(); toast('Demo data restored') } }} className="w-full flex items-center gap-3 px-4 py-3.5 text-left font-semibold text-ink-500"><RotateCcw size={18} /> Reset demo data</button>}
       </Card>
       <p className="text-center text-[11px] text-ink-400 mt-5">Smart Society · Made for {society.name}</p>
 
@@ -104,8 +107,8 @@ export default function Profile() {
       <Sheet open={sheet === 'about'} onClose={() => setSheet(null)} title="About">
         <div className="text-sm text-ink-700 space-y-3">
           <p><b>{society.name}</b><br />{society.address}<br />Reg. No. {society.regNo}</p>
-          <p className="flex items-center gap-2"><Phone size={14} /> +91 20 2729 0000 <Mail size={14} className="ml-2" /> office@palmgrove.example.com</p>
-          <p className="text-ink-500">Smart Society is an installable web app. In Chrome, tap ⋮ → <b>Add to Home screen</b> to install it. It works offline; data is stored securely on this device in demo mode.</p>
+          {(society.officePhone || society.officeEmail) && <p className="flex items-center gap-2 flex-wrap">{society.officePhone && <><Phone size={14} /> {society.officePhone}</>} {society.officeEmail && <><Mail size={14} className="ml-2" /> {society.officeEmail}</>}</p>}
+          <p className="text-ink-500">Smart Society is an installable web app. In Chrome, tap ⋮ → <b>Add to Home screen</b> {DEMO ? 'to install it. It works offline; data is stored securely on this device in demo mode.' : 'to install it. Your society’s data is stored securely in the cloud and also works offline.'}</p>
         </div>
       </Sheet>
     </Page>

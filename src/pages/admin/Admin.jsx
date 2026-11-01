@@ -1,5 +1,5 @@
 import { Routes, Route, useNavigate } from 'react-router-dom'
-import { Building2, Users, Wallet, AlertCircle, MessageSquareWarning, CalendarCheck, CalendarDays, UserPlus, Megaphone, Receipt, UserCheck, Dumbbell, Vote, ShieldAlert, BarChart3, ChevronRight, Siren } from 'lucide-react'
+import { Building2, Users, Wallet, AlertCircle, MessageSquareWarning, CalendarCheck, CalendarDays, UserPlus, Megaphone, Receipt, UserCheck, Dumbbell, Vote, ShieldAlert, BarChart3, ChevronRight, Siren, Upload, Contact } from 'lucide-react'
 import { Page, Card, Stat, SectionTitle } from '../../components/ui'
 import { Ring } from '../../components/Charts'
 import { useAuth } from '../../lib/auth'
@@ -11,6 +11,8 @@ import Billing from './Billing'
 import Residents from './Residents'
 import Reports from './Reports'
 import { AdminComplaints, AdminBookings, Moderation, AdminVisitors } from './Manage'
+import Import from './Import'
+import Contacts from './Contacts'
 
 export default function Admin() {
   return (
@@ -23,6 +25,8 @@ export default function Admin() {
       <Route path="moderation" element={<Moderation />} />
       <Route path="visitors" element={<AdminVisitors />} />
       <Route path="reports" element={<Reports />} />
+      <Route path="import" element={<Import />} />
+      <Route path="contacts" element={<Contacts />} />
     </Routes>
   )
 }
@@ -53,6 +57,8 @@ function Overview() {
   const rate = s.billed ? s.collected / s.billed : 0
   const links = [
     can(user, 'residents.manage') && { to: 'residents', label: 'Residents & apartments', icon: Users, badge: s.regs },
+    can(user, 'residents.manage') && { to: 'import', label: 'Import residents & flats', icon: Upload },
+    can(user, 'facilities.manage') && { to: 'contacts', label: 'Staff & contacts', icon: Contact },
     can(user, 'announcement.publish') && { to: '/announcements/new', label: 'Publish announcement', icon: Megaphone },
     can(user, 'billing.manage') && { to: 'billing', label: 'Maintenance billing', icon: Receipt },
     can(user, 'payments.view_all') && !can(user, 'billing.manage') && { to: 'billing', label: 'Payment tracking', icon: Receipt },

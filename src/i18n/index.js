@@ -10,6 +10,7 @@ import s1 from './strings1'
 import s2 from './strings2'
 import s3 from './strings3'
 import s4 from './strings4'
+import s5 from './strings5'
 
 export const LANGS = [
   { code: 'en', label: 'English', locale: 'en-IN' },
@@ -20,7 +21,7 @@ const KEY = 'smart-society-lang'
 const IDX = { mr: 1, hi: 2 }
 
 const DICT = new Map()
-for (const row of [...s1, ...s2, ...s3, ...s4]) if (!DICT.has(row[0])) DICT.set(row[0], row)
+for (const row of [...s1, ...s2, ...s3, ...s4, ...s5]) if (!DICT.has(row[0])) DICT.set(row[0], row)
 
 let lang = (() => {
   try {
@@ -129,6 +130,21 @@ const PATTERNS = [
   P(/^(.+) collection$/, (m) => `${m} वसुली`, (m) => `${m} वसूली`),
   P(/^(\d+) new$/, (n) => `${n} नवीन`, (n) => `${n} नए`),
   P(/^of (₹[\d,]+) billed · (\d+)\/(\d+) flats paid$/, (a, p, c) => `${a} बिलापैकी · ${c} पैकी ${p} सदनिकांनी भरले`, (a, p, c) => `${a} के बिल में से · ${c} में से ${p} फ्लैटों ने भुगतान किया`),
+  P(/^Exclusively for (.+) residents$/, (n) => `फक्त ${n} रहिवाशांसाठी`, (n) => `केवल ${n} निवासियों के लिए`, [0]),
+  P(/^Step (\d) of (\d) · (.+)$/, (a, b, c) => `टप्पा ${a} / ${b} · ${c}`, (a, b, c) => `चरण ${a} / ${b} · ${c}`),
+  P(/^(\d+) flats · (.+)$/, (n, x) => `${n} सदनिका · ${x}`, (n, x) => `${n} फ्लैट · ${x}`, [1]),
+  P(/^(\d+) ready · $/, (n) => `${n} तयार · `, (n) => `${n} तैयार · `),
+  P(/^(\d+) with problems$/, (n) => `${n} मध्ये अडचणी`, (n) => `${n} में समस्या`),
+  P(/^Import (\d+)$/, (n) => `${n} आयात करा`, (n) => `${n} इम्पोर्ट करें`),
+  P(/^Save (\d+)$/, (n) => `${n} जतन करा`, (n) => `${n} सेव करें`),
+  P(/^(\d+) residents imported$/, (n) => `${n} रहिवासी आयात झाले`, (n) => `${n} निवासी इम्पोर्ट हुए`),
+  P(/^(\d+) flats saved$/, (n) => `${n} सदनिका जतन झाल्या`, (n) => `${n} फ्लैट सेव हुए`),
+  P(/^Staff \((\d+)\)$/, (n) => `कर्मचारी (${n})`, (n) => `कर्मचारी (${n})`),
+  P(/^Directory contacts \((\d+)\)$/, (n) => `निर्देशिका संपर्क (${n})`, (n) => `डायरेक्टरी संपर्क (${n})`),
+  P(/^Remove (.+)\?$/, (n) => `${n} काढायचे?`, (n) => `${n} हटाएँ?`, [0]),
+  P(/^Sent to (.+@.+)$/, (e) => `${e} वर पाठवला`, (e) => `${e} पर भेजा गया`, [0]),
+  P(/^Payments to verify \((\d+)\)$/, (n) => `पडताळायची पेमेंट (${n})`, (n) => `सत्यापित करने के लिए भुगतान (${n})`),
+  P(/^The treasurer will confirm your payment of (₹[\d,]+)\. You’ll get a notification and a receipt once it’s verified\.$/, (a) => `खजिनदार तुमचे ${a} चे पेमेंट निश्चित करतील. पडताळणीनंतर तुम्हाला सूचना व पावती मिळेल.`, (a) => `कोषाध्यक्ष आपके ${a} के भुगतान की पुष्टि करेंगे. सत्यापन के बाद आपको सूचना और रसीद मिलेगी.`),
   P(/^Remove$/, () => 'काढा', () => 'हटाएँ'),
   // notification titles / bodies created by the app
   P(/^(.+) liked your post$/, (n) => `${n} यांना तुमची पोस्ट आवडली`, (n) => `${n} को आपकी पोस्ट पसंद आई`, [0]),

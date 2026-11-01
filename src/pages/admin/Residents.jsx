@@ -23,7 +23,7 @@ export default function Residents() {
   const list = users.filter((u) => !q || (u.name + aptNo(u.apartmentId) + u.phone).toLowerCase().includes(q.toLowerCase()))
   const u = sel && users.find((x) => x.id === sel)
   return (
-    <Page title="Residents & apartments" back="/admin" actions={<Button size="sm" variant="secondary" onClick={() => downloadCSV('residents.csv', [['Name', 'Flat', 'Role', 'Phone', 'Email', 'Status'], ...users.map((x) => [x.name, aptNo(x.apartmentId), roleLabel(x.role), x.phone, x.email, x.status])])}>Export</Button>}>
+    <Page title="Residents & apartments" back="/admin" actions={<><Button size="sm" variant="ghost" onClick={() => { window.location.hash = '#/admin/import' }}>Import</Button><Button size="sm" variant="secondary" onClick={() => downloadCSV('residents.csv', [['Name', 'Flat', 'Role', 'Phone', 'Email', 'Status'], ...users.map((x) => [x.name, aptNo(x.apartmentId), roleLabel(x.role), x.phone, x.email, x.status])])}>Export</Button></>}>
       <Tabs className="mt-1" value={tab} onChange={setTab} tabs={[{ value: 'requests', label: `Requests (${regs.length})`, count: regs.length }, { value: 'people', label: 'People' }, { value: 'flats', label: 'Flats' }]} />
       {tab === 'requests' && (
         <div className="space-y-3 mt-4">

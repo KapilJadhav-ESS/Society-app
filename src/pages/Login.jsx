@@ -7,6 +7,86 @@ import { findUserByPhone, registerApartment } from '../lib/actions'
 
 import { otp6 } from '../lib/utils'
 import LanguageSwitcher from '../components/LanguageSwitcher'
+import { CLOUD, BRAND_NAME } from '../lib/config'
+import { sendOtp, verifyOtp } from '../lib/cloud'
+
+export default function Login() {
+  return CLOUD ? <CloudLogin /> : <DemoLogin />
+}
+
+export function Hero({ title, sub, emoji = '🏢' }) {
+  return (
+    <div className="relative overflow-hidden bg-gradient-to-br from-brand-800 via-brand-900 to-[#0a1a2e] text-white px-6 pt-16 pb-24 safe-top">
+      <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent-500/20 blur-2xl" />
+      <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-400/10 blur-2xl" />
+      <div className="relative flex justify-end -mt-8 mb-6"><LanguageSwitcher dark /></div>
+      <div className="relative">
+        <div className="h-14 w-14 rounded-2xl bg-white/10 backdrop-blur grid place-items-center text-3xl mb-5">{emoji}</div>
+        <p className="text-brand-200 text-sm font-medium">Smart Society</p>
+        <h1 className="text-[28px] font-extrabold leading-tight mt-1">{title}</h1>
+        {sub && <p className="text-brand-200 text-sm mt-1">{sub}</p>}
+      </div>
+    </div>
+  )
+}
+
+function CloudLogin() {
+  const { enter } = useAuth()
+  const [mode, setMode] = useState('phone')
+  const [step, setStep] = useState('id')
+  const [id, setId] = useState('')
+  const [code, setCode] = useState('')
+  const [err, setErr] = useState('')
+  const [busy, setBusy] = useState(false)
+  const valid = mode === 'phone' ? id.replace(/\D/g, '').length === 10 : /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(id.trim())
+  const send = async () => {
+    setErr('')
+    if (!valid) return setErr(mode === 'phone' ? 'Enter your 10-digit mobile number' : 'Enter a valid email address')
+    setBusy(true)
+    try { await sendOtp(id); setStep('otp'); setCode('') } catch (e) { setErr(e.message) } finally { setBusy(false) }
+  }
+  const verify = async () => {
+    setErr(''); setBusy(true)
+    try { await verifyOtp(id, code); await enter() } catch (e) { setErr(e.message); setBusy(false) }
+  }
+  return (
+    <div className="min-h-full flex flex-col">
+      <Hero title={BRAND_NAME || 'Your society, in your pocket.'} sub={BRAND_NAME ? 'Smart Society' : ''} />
+      <div className="flex-1 -mt-14 px-4 pb-10 relative">
+        <Card className="p-5">
+          {step === 'id' ? (
+            <>
+              <h2 className="text-lg font-bold">Welcome home 👋</h2>
+              <p className="text-sm text-ink-500 mb-4">Log in with your registered mobile number</p>
+              <Tabs className="mb-4" value={mode} onChange={(v) => { setMode(v); setId(''); setErr('') }} tabs={[{ value: 'phone', label: 'Mobile' }, { value: 'email', label: 'Email' }]} />
+              <Field error={err}>
+                {mode === 'phone' ? (
+                  <div className="flex gap-2">
+                    <span className="h-12 px-3 rounded-xl border border-ink-200 grid place-items-center text-[15px] font-semibold text-ink-700">+91</span>
+                    <Input inputMode="numeric" maxLength={10} placeholder="10-digit mobile" value={id} onChange={(e) => setId(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && send()} />
+                  </div>
+                ) : <Input type="email" inputMode="email" placeholder="you@example.com" value={id} onChange={(e) => setId(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && send()} />}
+              </Field>
+              <Button block size="lg" icon={Smartphone} loading={busy} onClick={send}>Send OTP</Button>
+              <p className="text-xs text-ink-500 mt-4 text-center">New to the app? Log in with your mobile number first — you can then join your society or set up a new one.</p>
+            </>
+          ) : (
+            <>
+              <button onClick={() => setStep('id')} className="flex items-center gap-1 text-sm text-ink-500 mb-3"><ArrowLeft size={16} /> Change number</button>
+              <h2 className="text-lg font-bold">Enter verification code</h2>
+              <p className="text-sm text-ink-500 mb-5">{mode === 'phone' ? `Sent to +91 ${id}` : `Sent to ${id}`}</p>
+              <Field error={err}>
+                <Input autoFocus inputMode="numeric" maxLength={6} placeholder="• • • • • •" className="text-center tracking-[0.6em] text-xl font-bold" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))} onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && verify()} />
+              </Field>
+              <Button block size="lg" icon={ShieldCheck} loading={busy} onClick={verify} disabled={code.length !== 6}>Verify & continue</Button>
+              <button onClick={send} disabled={busy} className="w-full mt-4 text-sm font-semibold text-brand-600">Resend code</button>
+            </>
+          )}
+        </Card>
+      </div>
+    </div>
+  )
+}
 
 const DEMOS = [
   { id: 'u_priya', label: 'Resident', who: 'Priya Sharma · A-302' },
@@ -17,7 +97,7 @@ const DEMOS = [
   { id: 'u_admin', label: 'Super Admin', who: 'Society Office' }
 ]
 
-export default function Login() {
+function DemoLogin() {
   const { login } = useAuth()
   const toast = useToast()
   const society = useData((d) => d.society())

@@ -1,16 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Check, X, EyeOff, Trash2, RotateCcw, ShieldCheck, ClipboardList, Download } from 'lucide-react'
-import { Page, Card, Tabs, Chips, Button, Empty, Toggle, Sheet, Field, Input, Textarea, Stat, Badge, useAction } from '../../components/ui'
+import { Check, X, EyeOff, Trash2, RotateCcw, ShieldCheck, ClipboardList, Download, Plus } from 'lucide-react'
+import { Page, Card, Tabs, Chips, Button, Empty, Toggle, Sheet, Field, Input, Textarea, Select, Stat, Badge, useAction } from '../../components/ui'
 import { ComplaintRow } from '../Complaints'
 import { BookingBadge } from '../Facilities'
 import { VisitorRow } from '../Visitors'
 import PostCard from '../../components/PostCard'
 import { useAuth } from '../../lib/auth'
-import { useData } from '../../lib/db'
+import { useData, db } from '../../lib/db'
 import { can } from '../../lib/rbac'
 import { isOverdue, decideBooking, saveFacility, moderatePost, aptNo, userById, VISITOR_TYPES, updateListing } from '../../lib/actions'
-import { fmtDateTime, fmtTime, inr, sameDay, downloadCSV, timeAgo } from '../../lib/utils'
+import { fmtDateTime, fmtTime, inr, sameDay, downloadCSV, timeAgo, uid } from '../../lib/utils'
 
 const avg = (a) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : 0)
 const hrs = (h) => (h < 48 ? `${h.toFixed(1)} h` : `${(h / 24).toFixed(1)} d`)
@@ -83,6 +83,7 @@ export function AdminBookings() {
             {x.active ? <Badge color="green">Open</Badge> : <Badge color="red">Closed</Badge>}
           </Card>
         ))}
+        {tab === 'facilities' && <NewFacility />}
       </div>
       <Sheet open={!!reject} onClose={() => setReject(null)} title="Decline booking">
         <Field label="Reason (shared with resident)"><Textarea rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="Hall reserved for society AGM" /></Field>
@@ -158,5 +159,39 @@ export function AdminVisitors() {
       <Chips className="my-3" value={t} onChange={setT} options={[{ value: 'all', label: 'All' }, ...Object.entries(VISITOR_TYPES).map(([k, l]) => ({ value: k, label: l }))]} />
       <div className="space-y-3">{list.map((v) => <VisitorRow key={v.id} v={v} showApt />)}</div>
     </Page>
+  )
+}
+
+function NewFacility() {
+  const act = useAction()
+  const { user } = useAuth()
+  const [f, setF] = useState({ name: '', emoji: '🏟️', slotHours: 1, open: 6, close: 22, charge: 0, capacity: 20, requiresApproval: false })
+  const set = (k, num) => (e) => setF({ ...f, [k]: num ? Number(e.target.value) : e.target.value })
+  const add = () => act(() => {
+    if (!can(user, 'facilities.manage')) throw new Error('Not allowed')
+    if (!f.name.trim()) throw new Error('Enter a name.')
+    if (f.slotHours !== 24 && f.open + f.slotHours > f.close) throw new Error('Opening hours are shorter than one slot.')
+    db.insert('facilities', { id: 'fa_' + uid(), ...f, name: f.name.trim(), chargeUnit: f.slotHours === 24 ? 'day' : 'slot', active: true, rules: [], color: '#0EA5E9' })
+    setF({ ...f, name: '' })
+  }, 'Facility added')
+  return (
+    <Card className="p-4">
+      <div className="font-bold text-sm mb-3">Add a facility</div>
+      <div className="grid grid-cols-[64px_1fr] gap-3">
+        <Field label="Icon"><Input value={f.emoji} maxLength={4} onChange={set('emoji')} className="text-center text-xl" /></Field>
+        <Field label="Name"><Input value={f.name} onChange={set('name')} placeholder="e.g. Table Tennis Room" /></Field>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <Field label="Slot (hours)"><Select value={f.slotHours} onChange={set('slotHours', true)}>{[1, 2, 3, 4, 24].map((h) => <option key={h} value={h}>{h === 24 ? 'Full day' : h}</option>)}</Select></Field>
+        <Field label="Opens"><Input type="number" min={0} max={23} value={f.open} onChange={set('open', true)} /></Field>
+        <Field label="Closes"><Input type="number" min={1} max={24} value={f.close} onChange={set('close', true)} /></Field>
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Charge (₹)"><Input type="number" min={0} value={f.charge} onChange={set('charge', true)} /></Field>
+        <Field label="Capacity"><Input type="number" min={1} value={f.capacity} onChange={set('capacity', true)} /></Field>
+      </div>
+      <Toggle checked={f.requiresApproval} onChange={(v) => setF({ ...f, requiresApproval: v })} label="Require committee approval" />
+      <Button block icon={Plus} className="mt-2" onClick={add}>Add facility</Button>
+    </Card>
   )
 }

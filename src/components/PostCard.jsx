@@ -10,7 +10,7 @@ import { timeAgo, fmtDateTime, cls, shareText } from '../lib/utils'
 export const catOf = (id) => POST_CATEGORIES.find((c) => c.id === id) || POST_CATEGORIES[0]
 
 export default function PostCard({ post, full }) {
-  const { user } = useAuth()
+  const { user, society } = useAuth()
   const nav = useNavigate()
   const act = useAction()
   const ask = useConfirm()
@@ -25,7 +25,7 @@ export default function PostCard({ post, full }) {
 
   const like = () => { act(() => toggleLike(user, post.id)); if (!liked) { setPop(true); setTimeout(() => setPop(false), 400) } }
   const share = async () => {
-    const r = await shareText({ title: 'Palm Grove community', text: `${author?.name}: ${post.text}` })
+    const r = await shareText({ title: society.name || 'Smart Society', text: `${author?.name}: ${post.text}` })
     if (r === 'copied') toast('Post copied to clipboard')
   }
   const remove = async () => {

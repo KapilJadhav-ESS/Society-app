@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, X, ImagePlus, Play, CheckCircle2, AlertCircle, Info, Inbox } from 'lucide-react'
 import { cls, initials, fileToDataUrl } from '../lib/utils'
+import { storeMedia } from '../lib/media'
 
 /* ---------- Layout ---------- */
 export function Page({ title, subtitle, back, actions, children, className = '', noPad, hero }) {
@@ -289,6 +290,7 @@ export function MediaPicker({ value = [], onChange, max = 6, allowVideo = true, 
     e.target.value = ''
     setBusy(true)
     const out = []
+    try {
     for (const f of files) {
       if (f.type.startsWith('video/')) {
         if (!allowVideo) continue
@@ -299,6 +301,12 @@ export function MediaPicker({ value = [], onChange, max = 6, allowVideo = true, 
         if (f.size > 5 * 1024 * 1024) { toast('PDFs must be under 5 MB', 'error'); continue }
         out.push({ type: 'pdf', url: await fileToDataUrl(f), name: f.name, size: Math.round(f.size / 1024) + ' KB' })
       }
+    }
+    for (const m of out) m.url = await storeMedia(m.url, m.name)
+    } catch (e) {
+      toast(e.message || 'Upload failed', 'error')
+      setBusy(false)
+      return
     }
     setBusy(false)
     onChange([...value, ...out])
