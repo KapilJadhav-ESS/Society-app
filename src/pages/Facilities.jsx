@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom'
 import { Users, IndianRupee, ShieldCheck, Clock, CalendarCheck, Info, CheckCircle2 } from 'lucide-react'
 import { Page, Button, Card, Tabs, Empty, Sheet, Field, Textarea, Badge, useAction, useConfirm } from '../components/ui'
+import { getLocale } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { useData } from '../lib/db'
 import { createBooking, cancelBooking, activeBookings, overlaps, aptNo } from '../lib/actions'
@@ -121,9 +122,9 @@ function Book() {
             const k = isoDay(dt)
             return (
               <button key={k} onClick={() => setDay(k)} className={cls('shrink-0 w-14 py-2 rounded-2xl text-center border transition', day === k ? 'bg-brand-800 text-white border-brand-800' : 'bg-white border-ink-200')}>
-                <div className={cls('text-[10px] font-semibold uppercase', day === k ? 'text-brand-200' : 'text-ink-400')}>{dt.toLocaleDateString('en-IN', { weekday: 'short' })}</div>
+                <div className={cls('text-[10px] font-semibold uppercase', day === k ? 'text-brand-200' : 'text-ink-400')}>{dt.toLocaleDateString(getLocale(), { weekday: 'short' })}</div>
                 <div className="text-lg font-extrabold">{dt.getDate()}</div>
-                <div className={cls('text-[10px]', day === k ? 'text-brand-200' : 'text-ink-400')}>{dt.toLocaleDateString('en-IN', { month: 'short' })}</div>
+                <div className={cls('text-[10px]', day === k ? 'text-brand-200' : 'text-ink-400')}>{dt.toLocaleDateString(getLocale(), { month: 'short' })}</div>
               </button>
             )
           })}

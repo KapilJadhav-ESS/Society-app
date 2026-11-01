@@ -1,4 +1,5 @@
-import { Suspense, lazy, useEffect } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
+import { getLang, onLangChange } from './i18n'
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './lib/auth'
 import { can } from './lib/rbac'
@@ -63,8 +64,10 @@ function Shell() {
 }
 
 export default function App() {
+  const [lang, setLangState] = useState(getLang())
+  useEffect(() => onLangChange(setLangState), [])
   return (
-    <OverlayProvider>
+    <OverlayProvider key={lang}>
       <AuthProvider>
         <Shell />
       </AuthProvider>

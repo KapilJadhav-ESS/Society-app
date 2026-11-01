@@ -61,7 +61,7 @@ export default function PostCard({ post, full }) {
           <MessageCircle size={20} />{post.comments.length || ''}
         </button>
         <button onClick={share} className="flex items-center gap-1.5 h-9 px-2.5 rounded-full text-sm font-semibold hover:bg-ink-100"><Share2 size={19} /></button>
-        {post.likes.length > 0 && <span className="ml-auto text-xs text-ink-400 pr-2">{post.likes.length} {post.likes.length === 1 ? 'like' : 'likes'} · {post.comments.length} comments</span>}
+        {post.likes.length > 0 && <span className="ml-auto text-xs text-ink-400 pr-2">{`${post.likes.length} ${post.likes.length === 1 ? 'like' : 'likes'} · ${post.comments.length} comments`}</span>}
       </div>
 
       <Sheet open={menu} onClose={() => setMenu(false)}>

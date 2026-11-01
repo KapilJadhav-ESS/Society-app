@@ -3,7 +3,7 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
-      fontFamily: { sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'] },
+      fontFamily: { sans: ['"Plus Jakarta Sans"', '"Noto Sans Devanagari"', 'system-ui', 'sans-serif'] },
       colors: {
         brand: {
           50: '#EEF2FA', 100: '#D9E1F2', 200: '#B3C2E3', 300: '#8299CC', 400: '#5470B0',

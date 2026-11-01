@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource/noto-sans-devanagari": "^5.1.0",
     "@fontsource/plus-jakarta-sans": "^5.1.0",
     "idb-keyval": "^6.2.1",
     "lucide-react": "^0.460.0",

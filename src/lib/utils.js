@@ -1,3 +1,4 @@
+import { getLocale } from '../i18n'
 export const uid = (p = '') => p + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4)
 
 export const inr = (n = 0) =>
@@ -14,13 +15,13 @@ export const daysFromNow = (d, h = 10, m = 0) => {
 export const hoursAgo = (h) => new Date(Date.now() - h * 3600000).toISOString()
 
 export const fmtDate = (iso, opts = {}) =>
-  iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: opts.year === false ? undefined : 'numeric', ...opts }) : '—'
-export const fmtShort = (iso) => (iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' }) : '—')
-export const fmtTime = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit' }) : '')
+  iso ? new Date(iso).toLocaleDateString(getLocale(), { day: 'numeric', month: 'short', year: opts.year === false ? undefined : 'numeric', ...opts }) : '—'
+export const fmtShort = (iso) => (iso ? new Date(iso).toLocaleDateString(getLocale(), { day: 'numeric', month: 'short' }) : '—')
+export const fmtTime = (iso) => (iso ? new Date(iso).toLocaleTimeString(getLocale(), { hour: 'numeric', minute: '2-digit' }) : '')
 export const fmtDateTime = (iso) => (iso ? `${fmtShort(iso)}, ${fmtTime(iso)}` : '—')
 export const monthLabel = (ym) => {
   const [y, m] = ym.split('-').map(Number)
-  return new Date(y, m - 1, 1).toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+  return new Date(y, m - 1, 1).toLocaleDateString(getLocale(), { month: 'long', year: 'numeric' })
 }
 export const ymOf = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 export const addMonths = (ym, n) => {

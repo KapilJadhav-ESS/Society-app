@@ -3,6 +3,7 @@
 // permissions, mirroring what server-side endpoints / RLS policies would do.
 import { db } from './db'
 import { can } from './rbac'
+import { translate } from '../i18n'
 import { uid, otp6, ymOf, monthLabel, fmtDateTime, fmtShort, inr } from './utils'
 
 export class AppError extends Error {}
@@ -39,8 +40,9 @@ export async function devicePush(title, body, link) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return
     const reg = await navigator.serviceWorker?.getRegistration()
     const opts = { body, icon: 'pwa-192.png', badge: 'pwa-192.png', data: { link }, tag: link || title }
-    if (reg) reg.showNotification(title, opts)
-    else new Notification(title, opts)
+    opts.body = translate(body)
+    if (reg) reg.showNotification(translate(title), opts)
+    else new Notification(translate(title), opts)
   } catch { /* unsupported */ }
 }
 

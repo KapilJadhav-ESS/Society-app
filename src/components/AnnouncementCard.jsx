@@ -28,7 +28,7 @@ export default function AnnouncementCard({ a, compact }) {
       <div className={cls('text-[15px] text-ink-900 leading-snug', unread ? 'font-bold' : 'font-semibold')}>{a.title}</div>
       <p className="text-[13px] text-ink-500 mt-1 line-clamp-2">{a.body}</p>
       <div className="flex items-center gap-3 mt-2.5 text-[11px] font-semibold">
-        {a.attachments?.length > 0 && <span className="flex items-center gap-1 text-ink-500"><Paperclip size={12} /> {a.attachments.length} attachment{a.attachments.length > 1 ? 's' : ''}</span>}
+        {a.attachments?.length > 0 && <span className="flex items-center gap-1 text-ink-500"><Paperclip size={12} /> <span>{`${a.attachments.length} attachment${a.attachments.length > 1 ? 's' : ''}`}</span></span>}
         {a.expiresAt && <span className="text-ink-400">Valid till {fmtShort(a.expiresAt)}</span>}
         {needsAck && <span className="ml-auto text-red-600">Acknowledgement needed</span>}
         {a.requiresAck && !needsAck && <span className="ml-auto flex items-center gap-1 text-accent-600"><CheckCheck size={13} /> Acknowledged</span>}

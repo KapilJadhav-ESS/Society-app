@@ -64,7 +64,7 @@ function PollCard({ p }) {
       {showResults && chk.reason && open && <p className="text-xs text-ink-500 mt-3">{chk.reason}</p>}
       <div className="flex items-center gap-3 mt-4 pt-3 border-t border-ink-100 text-[11px] text-ink-500 flex-wrap">
         <span className="flex items-center gap-1"><EIcon size={12} /> {EL}</span>
-        <span>{total} vote{total !== 1 ? 's' : ''}</span>
+        <span>{`${total} vote${total !== 1 ? 's' : ''}`}</span>
         <span className="flex items-center gap-1"><Clock size={12} /> {open ? `Closes ${timeAgo(p.closesAt)}` : `Closed ${fmtDate(p.closesAt)}`}</span>
         {can(user, 'polls.create') && open && <button className="ml-auto text-red-600 font-semibold" onClick={async () => { if (await ask({ title: 'Close this poll now?', ok: 'Close poll' })) act(() => closePoll(user, p.id), 'Poll closed') }}>Close now</button>}
       </div>

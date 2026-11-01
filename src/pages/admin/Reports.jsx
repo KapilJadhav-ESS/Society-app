@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Download, Star } from 'lucide-react'
 import { Page, Card, Chips, Button, Empty, Stat } from '../../components/ui'
 import { ColumnChart, BarList } from '../../components/Charts'
+import { getLocale } from '../../i18n'
 import { useAuth } from '../../lib/auth'
 import { useData } from '../../lib/db'
 import { can } from '../../lib/rbac'
@@ -97,7 +98,7 @@ function Complaints({ list }) {
 
 function Visitors({ list }) {
   const days = Array.from({ length: 7 }, (_, i) => new Date(Date.now() - (6 - i) * 86400000))
-  const series = days.map((d) => ({ label: d.toLocaleDateString('en-IN', { weekday: 'short' }), value: list.filter((v) => isoDay(v.entryAt) === isoDay(d)).length }))
+  const series = days.map((d) => ({ label: d.toLocaleDateString(getLocale(), { weekday: 'short' }), value: list.filter((v) => isoDay(v.entryAt) === isoDay(d)).length }))
   const byType = Object.entries(VISITOR_TYPES).map(([k, l]) => ({ label: l, value: list.filter((v) => v.type === k).length })).sort((a, b) => b.value - a.value)
   const hours = Array.from({ length: 8 }, (_, i) => i * 3)
   const byHour = hours.map((h) => ({ label: `${h}–${h + 3}`, value: list.filter((v) => { const x = new Date(v.entryAt).getHours(); return x >= h && x < h + 3 }).length }))

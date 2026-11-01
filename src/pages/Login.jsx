@@ -6,6 +6,7 @@ import { db, useData } from '../lib/db'
 import { findUserByPhone, registerApartment } from '../lib/actions'
 
 import { otp6 } from '../lib/utils'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 
 const DEMOS = [
   { id: 'u_priya', label: 'Resident', who: 'Priya Sharma · A-302' },
@@ -50,6 +51,7 @@ export default function Login() {
       <div className="relative overflow-hidden bg-gradient-to-br from-brand-800 via-brand-900 to-[#0a1a2e] text-white px-6 pt-16 pb-24 safe-top">
         <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full bg-accent-500/20 blur-2xl" />
         <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-sky-400/10 blur-2xl" />
+        <div className="relative flex justify-end -mt-8 mb-6"><LanguageSwitcher dark /></div>
         <div className="relative">
           <div className="h-14 w-14 rounded-2xl bg-white/10 backdrop-blur grid place-items-center text-3xl mb-5">{society?.logoEmoji}</div>
           <p className="text-brand-200 text-sm font-medium">Smart Society</p>

@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom'
 import './index.css'
 import App from './App'
 import { initDB } from './lib/db'
+import { startTranslator } from './i18n'
 import { registerSW } from 'virtual:pwa-register'
 
 registerSW({ immediate: true })
@@ -17,4 +18,5 @@ initDB().then(() => {
       </HashRouter>
     </React.StrictMode>
   )
+  startTranslator()
 })

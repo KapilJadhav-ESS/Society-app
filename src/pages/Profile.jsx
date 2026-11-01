@@ -7,6 +7,7 @@ import { useData, db, resetDB } from '../lib/db'
 import { roleLabel, can } from '../lib/rbac'
 import { updateUser, aptById, devicePush } from '../lib/actions'
 import { fileToDataUrl, uid, cls } from '../lib/utils'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import { canInstall, isStandalone, onInstallChange, promptInstall } from '../lib/install'
 
 export default function Profile() {
@@ -79,6 +80,10 @@ export default function Profile() {
 
       <div className="text-xs font-bold text-ink-400 uppercase tracking-wider mt-5 mb-2">Settings</div>
       <Card className="divide-y divide-ink-100 overflow-hidden">
+        <div className="px-4 py-3.5">
+          <div className="font-semibold mb-2"><span>Language</span> <span translate="no" className="text-ink-400 font-medium">· भाषा</span></div>
+          <LanguageSwitcher />
+        </div>
         {row(<ShieldCheck size={18} />, 'Privacy', 'Control what neighbours can see', 'privacy', 'bg-violet-50 text-violet-700')}
         {row(<Bell size={18} />, 'Notification preferences', user.prefs?.push ? 'Device notifications on' : 'In-app only', 'notifs', 'bg-amber-50 text-amber-700')}
         {row(<Info size={18} />, 'About & help', `${society.name} · v1.0`, 'about', 'bg-ink-100 text-ink-700')}

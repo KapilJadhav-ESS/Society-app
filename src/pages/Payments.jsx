@@ -61,7 +61,7 @@ function Dashboard() {
             <div className="bg-white/10 rounded-2xl p-3"><div className="text-[11px] text-brand-200 flex items-center gap-1"><CalendarClock size={12} /> Next due</div><div className="font-bold mt-0.5">{nextDue ? fmtDate(nextDue) : '—'}</div></div>
             <div className="bg-white/10 rounded-2xl p-3"><div className="text-[11px] text-brand-200 flex items-center gap-1"><Receipt size={12} /> Last payment</div><div className="font-bold mt-0.5">{last ? `${inr(last.amount)}` : '—'}</div><div className="text-[10px] text-brand-200">{last && fmtDate(last.createdAt)}</div></div>
           </div>
-          {total > 0 && <Button variant="success" size="lg" block className="mt-4" onClick={() => { setSel(unpaid.map((b) => b.id)); setPay(true) }}>Pay {inr(total)}</Button>}
+          {total > 0 && <Button variant="success" size="lg" block className="mt-4" onClick={() => { setSel(unpaid.map((b) => b.id)); setPay(true) }}>{`Pay ${inr(total)}`}</Button>}
         </div>
       </div>
 
@@ -200,7 +200,7 @@ function PaySheet({ open, onClose, bills, amount }) {
             )}
             {method === 'nb' && <select value={bank} onChange={(e) => setBank(e.target.value)} className="w-full h-12 rounded-xl border border-ink-200 px-3">{['HDFC Bank', 'ICICI Bank', 'State Bank of India', 'Axis Bank', 'Kotak Mahindra Bank', 'Bank of Maharashtra'].map((b) => <option key={b}>{b}</option>)}</select>}
           </div>
-          <Button variant="success" size="lg" block className="mt-5" icon={ShieldCheck} onClick={go}>Pay {inr(amount)} securely</Button>
+          <Button variant="success" size="lg" block className="mt-5" icon={ShieldCheck} onClick={go}>{`Pay ${inr(amount)} securely`}</Button>
           <p className="text-[11px] text-center text-ink-400 mt-3">Test mode · simulated payment gateway · no real money is charged</p>
         </>
       )}

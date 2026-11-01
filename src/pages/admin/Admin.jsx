@@ -72,7 +72,7 @@ function Overview() {
         <div className="flex-1 min-w-0">
           <div className="text-xs text-ink-500 font-semibold">{monthLabel(ym)} collection</div>
           <div className="text-2xl font-extrabold">{inr(s.collected)}</div>
-          <div className="text-xs text-ink-500">of {inr(s.billed)} billed · {s.paidCount}/{s.billCount} flats paid</div>
+          <div className="text-xs text-ink-500">{`of ${inr(s.billed)} billed · ${s.paidCount}/${s.billCount} flats paid`}</div>
         </div>
       </Card>
       <div className="grid grid-cols-2 gap-3 mt-3">

@@ -48,6 +48,8 @@ Test-card tip: on the simulated payment gateway, any card works; a card ending i
 
 ## 3. Features
 
+- **Languages: English · मराठी · हिंदी** – switch on the login screen or in Profile → Settings → Language. The choice is remembered on the phone, and phones set to Marathi or Hindi open in that language automatically. Menus, buttons, forms, messages and dates are translated; what residents type themselves (posts, comments, names, notices) stays in the language it was written in. Downloaded PDF receipts are in English.
+
 - **Home** – greeting, flat number, notification bell, emergency banner, visitor-at-gate approval card, dues card, shortcuts, announcements (pinned, Urgent/Important/General, expiry, read/unread, attachments, acknowledgements) and a social feed (photos/videos, likes, comments, share, report, 7 categories with filters).
 - **Central ＋ button** – bottom sheet with 8 quick actions: complaint, pay maintenance, post, report issue, request service, invite visitor, lost & found, create event.
 - **Maintenance** – outstanding amount, next due date, last payment, status; bill breakdown, late fees, adjustments; simulated UPI / card / net-banking gateway; payment history; downloadable **PDF receipts**. Admin: rate per sq.ft, fixed and flat-specific charges, bill generation, late fees, waivers, offline payments, paid/unpaid tracking, CSV export.
@@ -78,6 +80,7 @@ src/
   lib/rbac.js      roles → permissions
   lib/seed.js      realistic sample society (72 flats, residents, bills, tickets…)
   lib/pdf.js       dependency-free PDF writer (receipts, notices)
+  i18n/            Marathi & Hindi dictionaries (strings1-4.js) + translator (index.js)
   components/      design system (cards, sheets, chips, tabs, charts…)
   pages/           feature modules; pages/admin/ for the dashboard
 supabase/schema.sql  Postgres schema + RLS for the cloud backend
@@ -96,3 +99,9 @@ npm install
 npm run dev      # http://localhost:5173
 npm run build    # production build in dist/
 ```
+
+### Adding or correcting a translation
+Open `src/i18n/strings1.js` … `strings4.js` and edit the line
+`['English text', 'मराठी', 'हिंदी']`. Text with numbers or names in it
+("3h ago", "Ticket #PG-1043 created") is handled by the patterns in
+`src/i18n/index.js`.

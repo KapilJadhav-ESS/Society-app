@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Routes, Route, useNavigate, useParams } from 'react-router-dom'
 import { Plus, MapPin, Clock, Users, BellRing, BellOff, CalendarPlus, ImagePlus, ChevronLeft, ChevronRight, CalendarDays, Share2, ArrowLeft } from 'lucide-react'
 import { Page, Button, Card, Tabs, Empty, Field, Input, Textarea, Select, Avatar, MediaPicker, MediaGrid, Sheet, Badge, useAction, useToast } from '../components/ui'
+import { getLocale } from '../i18n'
 import { useAuth } from '../lib/auth'
 import { useData } from '../lib/db'
 import { can } from '../lib/rbac'
@@ -27,7 +28,7 @@ function EventCard({ e }) {
   return (
     <Card className="overflow-hidden" onClick={() => nav(`/events/${e.id}`)}>
       <div className="relative h-32"><img src={e.cover} alt="" className="h-full w-full object-cover" />
-        <div className="absolute top-3 left-3 bg-white rounded-xl px-2.5 py-1 text-center shadow"><div className="text-[10px] font-bold text-red-500 uppercase">{d.toLocaleDateString('en-IN', { month: 'short' })}</div><div className="text-lg font-extrabold leading-none">{d.getDate()}</div></div>
+        <div className="absolute top-3 left-3 bg-white rounded-xl px-2.5 py-1 text-center shadow"><div className="text-[10px] font-bold text-red-500 uppercase">{d.toLocaleDateString(getLocale(), { month: 'short' })}</div><div className="text-lg font-extrabold leading-none">{d.getDate()}</div></div>
         {my && <Badge color={my.status === 'going' ? 'green' : 'amber'} className="absolute top-3 right-3 !bg-white">{my.status === 'going' ? '✓ Going' : 'Maybe'}</Badge>}
       </div>
       <div className="p-4">
@@ -72,10 +73,10 @@ function Calendar({ events }) {
       <Card className="p-4 mt-4">
         <div className="flex items-center justify-between mb-3">
           <button aria-label="Previous month" onClick={() => setCur(new Date(cur.getFullYear(), cur.getMonth() - 1, 1))} className="h-9 w-9 grid place-items-center rounded-full hover:bg-ink-100"><ChevronLeft size={18} /></button>
-          <div className="font-bold">{cur.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })}</div>
+          <div className="font-bold">{cur.toLocaleDateString(getLocale(), { month: 'long', year: 'numeric' })}</div>
           <button aria-label="Next month" onClick={() => setCur(new Date(cur.getFullYear(), cur.getMonth() + 1, 1))} className="h-9 w-9 grid place-items-center rounded-full hover:bg-ink-100"><ChevronRight size={18} /></button>
         </div>
-        <div className="grid grid-cols-7 text-center text-[11px] font-bold text-ink-400 mb-1">{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((d, i) => <div key={i}>{d}</div>)}</div>
+        <div className="grid grid-cols-7 text-center text-[11px] font-bold text-ink-400 mb-1">{Array.from({ length: 7 }, (_, i) => new Date(2023, 0, 1 + i).toLocaleDateString(getLocale(), { weekday: 'narrow' })).map((d, i) => <div key={i}>{d}</div>)}</div>
         <div className="grid grid-cols-7 gap-1">
           {cells.map((d, i) => d ? (
             <button key={i} onClick={() => setSel(d)} className={cls('aspect-square rounded-xl text-sm font-semibold relative', sameDay(d, sel) ? 'bg-brand-800 text-white' : sameDay(d, new Date()) ? 'bg-brand-50 text-brand-800' : 'hover:bg-ink-100')}>
@@ -87,7 +88,7 @@ function Calendar({ events }) {
       </Card>
       <div className="space-y-3 mt-4">
         {on(sel).map((e) => <EventCard key={e.id} e={e} />)}
-        {!on(sel).length && <p className="text-sm text-ink-400 text-center py-4">No events on {sel.toLocaleDateString('en-IN', { day: 'numeric', month: 'long' })}</p>}
+        {!on(sel).length && <p className="text-sm text-ink-400 text-center py-4">No events on {sel.toLocaleDateString(getLocale(), { day: 'numeric', month: 'long' })}</p>}
       </div>
     </>
   )
@@ -126,7 +127,7 @@ function Detail() {
           <div className="text-[11px] font-bold text-pink-600 uppercase tracking-wide">{e.emoji} {e.category}</div>
           <h1 className="text-[22px] font-extrabold leading-tight mt-1">{e.title}</h1>
           <div className="space-y-2 mt-4 text-sm">
-            <div className="flex items-center gap-3"><span className="h-9 w-9 rounded-xl bg-pink-50 text-pink-600 grid place-items-center"><Clock size={17} /></span><div><div className="font-semibold">{new Date(e.start).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}</div><div className="text-xs text-ink-500">{fmtTime(e.start)}{e.end && ` – ${sameDay(e.start, e.end) ? fmtTime(e.end) : fmtDateTime(e.end)}`}</div></div></div>
+            <div className="flex items-center gap-3"><span className="h-9 w-9 rounded-xl bg-pink-50 text-pink-600 grid place-items-center"><Clock size={17} /></span><div><div className="font-semibold">{new Date(e.start).toLocaleDateString(getLocale(), { weekday: 'long', day: 'numeric', month: 'long' })}</div><div className="text-xs text-ink-500">{fmtTime(e.start)}{e.end && ` – ${sameDay(e.start, e.end) ? fmtTime(e.end) : fmtDateTime(e.end)}`}</div></div></div>
             <div className="flex items-center gap-3"><span className="h-9 w-9 rounded-xl bg-sky-50 text-sky-700 grid place-items-center"><MapPin size={17} /></span><div className="font-semibold">{e.venue}</div></div>
             <div className="flex items-center gap-3"><Avatar user={org} size={36} /><div><div className="text-xs text-ink-500">Organised by</div><div className="font-semibold">{org?.name}</div></div></div>
           </div>
